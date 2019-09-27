@@ -1,6 +1,9 @@
 ## Welcome to GitHub Pages
 
 This page is used to shwo the output of the several analytics of the NBA dataset.
+Library Used:
+Crossfilter.js -  For data manipulation
+D3.js - For visualization
 <br>
 [Bar Chart:1](https://sakibbuddy.github.io/NBADataVisualization/bar.html)
 <br>
