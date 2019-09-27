@@ -1,0 +1,188 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+
+        .bar{
+            fill: #20c997;
+        }
+
+        .bar:hover{
+            fill: brown;
+        }
+
+        .axis {
+            font: 10px sans-serif;
+        }
+
+        .axis path,
+        .axis line {
+            fill: none;
+            stroke: #000;
+            shape-rendering: crispEdges;
+        }
+        .tooltip {
+            position: absolute;
+            width: 100px;
+            height: 28px;
+            pointer-events: none;
+            background-color: #e7eaed;
+        }
+        body {
+            font: 11px sans-serif;
+        }
+        .dot {
+            stroke: #000;
+        }
+    </style>
+</head>
+<body>
+<div id = "title">
+    <h3>Popularity per Player</h3></div>
+
+<div id="barChart"></div>
+
+<div id="scatterPlot"></div>
+
+</body>
+
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src="https://d3js.org/d3.v3.min.js"></script>
+<script src="https://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js"></script>
+<script type="text/javascript" src="static/js/crossfilter.min.js"></script>
+<script type="text/javascript">
+
+
+
+
+
+    d3.csv("data/nba_data.csv", function(error, data) {
+
+        data.forEach(function (d,i) {
+            d.popularity = parseInt(d.PAGEVIEWS,10) + parseInt(d.TWITTER_FAVORITE_COUNT,10) + parseInt(d.TWITTER_RETWEET_COUNT,10);
+        })
+
+
+         var barChart1 = barChart("#title",data,25,"SALARY_MILLIONS","popularity","Salary","Populariy");
+
+        function barChart(chartContainer,data,number,dimensionVal,grpVal,xAxisLabel,yAxisLabel) {
+
+            var margin = {top: 40, right: 20, bottom: 100, left: 130},
+                width = 500 - margin.left - margin.right,
+                height = 550 - margin.top - margin.bottom;
+
+            // set the ranges
+            var x = d3.scale.ordinal().rangeRoundBands([0, width], .05);
+
+            var y = d3.scale.linear().range([height, 0]);
+
+            // define the axis
+            var xAxis = d3.svg.axis()
+                .scale(x)
+                .orient("bottom")
+
+            var yAxis = d3.svg.axis()
+                .scale(y)
+                .orient("left")
+
+
+            var svg = d3.select(chartContainer).append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+
+
+            var ndx = crossfilter(data);
+            var dim = ndx.dimension(function (d) {
+                return JSON.stringify ( { xAxisValue: +d[dimensionVal] , player: d.PLAYER} ) ;
+            });
+
+            var group = dim.group().reduceSum(function (d) {
+                return d[grpVal]
+            });
+            group.all().forEach(function (d) {
+                d.key = JSON.parse(d.key);
+            })
+            var fakeGroup = getTops(group,number);
+
+            function getTops(source_group,number) {
+                return {
+                    all: function () {
+                        return source_group.top(number);
+                    }
+                };
+            }
+
+            x.domain(fakeGroup.all().map(function(d) { return d.key.xAxisValue; }));
+            y.domain([0, d3.max(fakeGroup.all(), function(d) { return d.value; })]);
+
+            var tip = d3.tip()
+                .attr('class', 'd3-tip')
+                .offset([-10, 0])
+                .html(function(d) {
+                    return "<strong>Player Name:</strong> <span style='color:red'>" + d.key.player + "</span>";
+                })
+
+            svg.call(tip);
+            // add axis
+            svg.append("g")
+                .attr("class", "x axis")
+                .attr("transform", "translate(0," + height + ")")
+                .call(xAxis)
+                .selectAll("text")
+                .style("text-anchor", "end")
+                .attr("dx", "-.8em")
+                .attr("dy", "-.55em")
+                .attr("transform", "translate(10,5)rotate(-45)" );
+
+            svg.append("text")
+                .attr('x', width / 2 )
+                .attr('y', 500)
+                .attr('text-anchor', 'middle')
+                .text(xAxisLabel)
+
+            svg.append("g")
+                .attr("class", "y axis")
+                .call(yAxis)
+                .append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("y",-95)
+                .attr("x",-255)
+                .attr("dy", ".71em")
+                //.style("text-anchor", "end")
+                .text(yAxisLabel);
+
+
+
+
+            svg.selectAll("bar")
+                .data(fakeGroup.all())
+                .enter().append("rect")
+                .attr("class", "bar")
+                .attr("x", function(d) { return x(d.key.xAxisValue); })
+                .attr("width", x.rangeBand())
+                .attr("height", function(d) { return  y(d.value); })
+                .attr("y", function(d) {  return height - y(d.value); })
+                .on('mouseover',tip.show)
+                .on('mouseout',tip.hide)
+                .transition()
+                .attr('y', function(d){
+                    return y(d.value);
+                })
+                .attr('height', function(d){
+                    return height - y(d.value);
+                })
+                .delay(function(d,i){
+                    return i*1;
+                })
+                .duration(10)
+        }
+
+    });
+
+
+
+</script>
+</html>
