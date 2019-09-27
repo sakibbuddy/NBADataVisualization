@@ -2,7 +2,9 @@
 
 This page is used to show the output of the several analytics of the NBA dataset.
 Library Used:
+<br>
 Crossfilter.js -  For data manipulation
+<br>
 D3.js - For visualization
 <br>
 [Bar Chart:1](https://sakibbuddy.github.io/NBADataVisualization/bar.html)
